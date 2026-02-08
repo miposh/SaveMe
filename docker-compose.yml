@@ -1,28 +1,49 @@
-version: "3.8"
+version: "3.9"
+
+x-default-build-args: &default-build-args
+  TZ: "${TZ}"
+
+x-default-logging: &default-logging
+  driver: local
+  options:
+    max-size: "1G"
+    max-file: "1"
+    compress: "false"
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: saveme_postgres
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        <<: *default-build-args
+    env_file:
+      - .env
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: saveme_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+    logging: *default-logging
+    depends_on:
+      - bgutil-provider
+      - configuration-webserver
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - .:/app
+    ports:
+      - "5555:5555"  # Dashboard (change port via Config.DASHBOARD_PORT in CONFIG/config.py)
 
-  redis:
-    image: redis:7-alpine
-    container_name: saveme_redis
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
     restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+    logging: *default-logging
+    expose:
+      - "4416"
 
-volumes:
-  postgres_data:
-  redis_data:
+  configuration-webserver:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./docker/configuration-webserver/conf:/etc/caddy:ro
+      - ./docker/configuration-webserver/site:/srv:ro
+      - ./docker/configuration-webserver/data:/data
+      - ./docker/configuration-webserver/config:/config
