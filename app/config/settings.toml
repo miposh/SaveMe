@@ -1,0 +1,28 @@
+[default]
+
+[development]
+bot_token = ""
+bot_parse_mode = "HTML"
+
+postgres_host = "localhost"
+postgres_port = 5432
+postgres_name = "saveme_db"
+postgres_user = "postgres"
+postgres_password = "postgres"
+postgres_min_pool = 1
+postgres_max_pool = 5
+
+redis_host = "localhost"
+redis_port = 6379
+redis_database = 1
+redis_password = ""
+
+downloads_dir = "./downloads"
+cookies_dir = "./cookies"
+
+log_level = "DEBUG"
+
+[production]
+log_level = "INFO"
+postgres_min_pool = 2
+postgres_max_pool = 10
