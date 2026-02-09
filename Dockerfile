@@ -1,11 +1,9 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 ARG TZ=Europe/Moscow
 ENV TZ="$TZ"
 
-# System dependencies:
-# - git, ffmpeg, mediainfo, rsync (README: base deps + FFmpeg)
-# - font packages for Arabic/Asian and emoji support (README: optional fonts)
+# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ffmpeg \
@@ -13,7 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rsync \
     fonts-noto-core \
     fonts-noto-extra \
-    #fonts-kacst \
     fonts-kacst-one \
     fonts-noto-cjk \
     fonts-indic \
@@ -23,8 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Optional: install Amiri Arabic font (as in README)
-RUN git clone https://github.com/aliftype/amiri.git /tmp/amiri \
+# Amiri Arabic font
+RUN git clone --depth 1 https://github.com/aliftype/amiri.git /tmp/amiri \
     && mkdir -p /usr/share/fonts/truetype/amiri \
     && cp /tmp/amiri/fonts/*.ttf /usr/share/fonts/truetype/amiri/ \
     && fc-cache -fv \
@@ -32,13 +29,17 @@ RUN git clone https://github.com/aliftype/amiri.git /tmp/amiri \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY requirements_new.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-install yt-dlp with pre-releases
+RUN pip install --no-cache-dir --pre "yt-dlp[default,curl-cffi]"
 
 COPY . .
 
-# Copy and make the entrypoint executable
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 5555
 
 CMD ["/usr/local/bin/docker-entrypoint.sh"]

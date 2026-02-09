@@ -1,25 +1,48 @@
-# Базовые зависимости (обычная установка)
-# pyrogram is outdated; switch to actively maintained PyroTGFork
-pyrotgfork
+# Core bot framework
+aiogram
+aiogram-dialog
+
+# Database
+psycopg
+psycopg-pool
+
+# Config
+pydantic
+pydantic-settings
+python-dotenv
+
+# HTTP
 aiohttp
 aiofiles
-requests<3,>=2.8.1
+httpx
+
+# Scheduler
+apscheduler
+
+# Dashboard
 fastapi
-uvicorn[standard]
+uvicorn
 jinja2
 python-multipart
-psutil
-TgCrypto>=1.2.5
-moviepy==1.0.3
-tldextract
+
+# Download engines
+yt-dlp
+gallery-dl
+
+# Media processing
+moviepy
 pillow
+
+# HTML parsing
+beautifulsoup4
+
+# Utilities
+tldextract
 chardet
-sdnotify
-firebase-admin
+psutil
+
+# YouTube PO Token
 bgutil-ytdlp-pot-provider
 
-# Только для yt-dlp — разрешить пре-релизы и переустановить «с нуля»
---pre
-yt-dlp[default,curl-cffi]
-# Gallery-dl для скачивания картинок
-gallery-dl
+# Crypto for Telegram
+TgCrypto

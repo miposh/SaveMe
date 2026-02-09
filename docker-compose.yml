@@ -1,7 +1,5 @@
-version: "3.9"
-
 x-default-build-args: &default-build-args
-  TZ: "${TZ}"
+  TZ: "${TZ:-Europe/Moscow}"
 
 x-default-logging: &default-logging
   driver: local
@@ -22,12 +20,60 @@ services:
     restart: unless-stopped
     logging: *default-logging
     depends_on:
-      - bgutil-provider
-      - configuration-webserver
+      postgres:
+        condition: service_healthy
+      bgutil-provider:
+        condition: service_started
+      configuration-webserver:
+        condition: service_started
+      telegram-bot-api:
+        condition: service_healthy
     volumes:
-      - .:/app
+      - ./downloads:/app/downloads
+      - ./TXT:/app/TXT:ro
+      - ./assets:/app/assets:ro
+      - ./migrations:/app/migrations:ro
+      - telegram_bot_api_data:/tmp/telegram-bot-api
     ports:
-      - "5555:5555"  # Dashboard (change port via Config.DASHBOARD_PORT in CONFIG/config.py)
+      - "${DASHBOARD_PORT:-5555}:${DASHBOARD_PORT:-5555}"
+
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      TELEGRAM_API_ID: ${API_ID:?API_ID is required for Local Bot API}
+      TELEGRAM_API_HASH: ${API_HASH:?API_HASH is required for Local Bot API}
+      TELEGRAM_LOCAL: "true"
+      TELEGRAM_STAT: ""
+    volumes:
+      - telegram_bot_api_data:/var/lib/telegram-bot-api
+    ports:
+      - "127.0.0.1:8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/healthcheck || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-saveme}
+      POSTGRES_USER: ${POSTGRES_USER:-saveme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-saveme} -d ${POSTGRES_DB:-saveme}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   bgutil-provider:
     image: brainicism/bgutil-ytdlp-pot-provider:latest
@@ -47,3 +93,7 @@ services:
       - ./docker/configuration-webserver/site:/srv:ro
       - ./docker/configuration-webserver/data:/data
       - ./docker/configuration-webserver/config:/config
+
+volumes:
+  postgres_data:
+  telegram_bot_api_data:
